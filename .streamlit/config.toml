@@ -1,5 +1,18 @@
 # Streamlit 界面配置
-# viewer 模式隐藏右上角 Deploy 按钮与开发者工具（任务书问题五）：
+# viewer 模式隐藏右上角 Deploy 按钮与开发者工具：
 # 这些是 Streamlit 平台自己的部署入口，与本产品无关，避免使用者误按。
 [client]
 toolbarMode = "viewer"
+
+# 全局主题（P1-2）：把 Streamlit 默认红 #FF4B4B 收敛为产品蓝，
+# 与 styles.py 中的 #0B5394（选中态边框/步骤条）保持同一强调色。
+[theme]
+base = "light"
+primaryColor = "#0B5394"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+linkColor = "#0B5394"
+borderColor = "#E5E7EB"
+baseRadius = "medium"
+font = "sans-serif"
