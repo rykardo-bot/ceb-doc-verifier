@@ -199,8 +199,8 @@ def answer_question(question: str, verification: dict, documents: list,
     if endpoint is None:
         return {
             "mode": "no_key",
-            "answer": "⚠️ 对话式核验助手需配置 LLM API Key 启用（环境变量 ARK_API_KEY，"
-                      "或 GLM_API_KEY/BIGMODEL_API_KEY）。为保证诚实性，本功能不提供预置问答。",
+            "answer": "⚠️ 对话式核验助手需管理员开通AI服务后使用。"
+                      "为保证诚实性，本功能不提供预置问答。",
         }
 
     is_hypothetical = bool(_HYPOTHETICAL_RE.search(question or ""))

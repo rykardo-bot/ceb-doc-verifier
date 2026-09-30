@@ -126,6 +126,25 @@ def test_unknown_station_rejected_with_hint(dc_users):
 
 # ---------------------------------------------------------------- 结算与补贴
 
+def test_import_unknown_station_counts_as_error(dc_users):
+    """站名未登记的行：action=error 且必须计入 stats["error"]。
+
+    此前只标 error 行、漏计计数——汇总条显示"错误 0"，财务误以为全部可导入。
+    """
+    h = dc_users["headers"]["finance"]
+    data = _xlsx_bytes("trip", [
+        ["2025-09-22", "乌兰", "二连", "俄罗斯", "T", "", "", "", "", "",
+         "", "", "", "", "2500000", "", "", ""],        # 发站未登记 → error
+    ])
+    preview = client.post("/datacheck/import/preview", headers=h,
+                          params={"kind": "trip"},
+                          files={"file": ("t.xlsx", data)}).json()
+    assert preview["stats"]["error"] == 1
+    row = next(r for r in preview["rows"] if r["action"] == "error")
+    assert "代码字典" in row["message"]
+    assert "错误 1" in preview["message"]
+
+
 def test_settlement_diff_reason_prompt(dc_users):
     """结算合计≠实付运费且差异原因为空 → 返回 needs_reason 提示（不阻断）。"""
     h = dc_users["headers"]["finance"]

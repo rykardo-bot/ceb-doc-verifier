@@ -34,6 +34,7 @@ import pdf_ingest
 import upload_wizard
 from llm_endpoint import resolve_endpoint
 from webapp import session, waybill_check
+from webapp.format import fmt_dt
 from webapp.api_client import (api_healthy, fetch_batch_full,
                                run_verification_effective)
 
@@ -458,10 +459,10 @@ def render_email_generator(verification: dict, documents: list) -> None:
     if result["mode"] == "not_needed":
         st.success(result["message"])
         return
-    mode_badge = {"live": "🟢 LLM实时生成",
-                  "offline_template": "📦 离线模板模式：草稿由本批次核验明细数据填充生成，"
-                                      "配置 API Key 后由LLM生成完整商务邮件"}.get(result["mode"], result["mode"])
-    st.caption(f"生成方式：{mode_badge}　|　数据版本 {dv}　|　发送前请人工审阅编辑")
+    mode_badge = {"live": "🟢 AI实时生成",
+                  "offline_template": "📦 离线模板模式（已按本批次核验明细自动填充；"
+                                      "如需AI润色完整商务邮件，请联系管理员开通AI服务）"}.get(result["mode"], result["mode"])
+    st.caption(f"生成方式：{mode_badge}　|　发送前请人工审阅编辑")
     tab_zh, tab_en = st.tabs(["中文版", "English"])
     with tab_zh:
         # 下载读取当前编辑后的实际内容（修复 F09：下载不再使用缓存的原始文本）
@@ -701,7 +702,8 @@ def render_doc_field_editor(batch_id: str, doc: dict) -> tuple[dict, int]:
                 included = new_value is not None
             else:
                 step = extra or 1.0
-                value = st.number_input(label, value=numeric_seed,
+                num_fmt = "%.0f" if kind == "int" else None   # 整数字段不显示 480.00
+                value = st.number_input(label, value=numeric_seed, format=num_fmt,
                                         min_value=0.0, step=step, key=widget_key)
                 new_value = value if kind == "float" else round(float(value), 2)
                 if kind == "int" and float(new_value).is_integer():
@@ -1063,8 +1065,8 @@ def _render_upload_flow() -> None:
     st.caption("按向导一步步来：声明单据构成 → 上传拆分 → 逐份确认 → 查看核验结果。")
 
     if not pdf_ingest.ocr_available():
-        st.warning("未检测到本机 tesseract OCR，扫描型PDF将无法提取文字（文本型PDF不受影响）。"
-                   "安装方法见 README。")
+        st.warning("未检测到扫描识别组件（OCR）：扫描件/拍照生成的PDF将无法提取文字，"
+                   "文本型PDF不受影响。如需核对扫描件，请联系管理员安装识别组件。")
     result = upload_wizard.render_upload_wizard(render_doc_field_editor)
     if result is None:
         st.stop()
@@ -1120,8 +1122,8 @@ def _render_mobile_flow() -> None:
     }
     _uploader = _mobile_record.get('created_by') or '—'
     st.success(f"已加载手机批次 {_mobile_record.get('batch_id')} —— "
-               f"拍摄于 {_mobile_record.get('created_at', '—')}（上传人：{_uploader}），"
-               f"风险等级：{_mobile_record.get('risk_label', '—')}（{_mobile_record.get('risk_level', '—')}）")
+               f"拍摄于 {fmt_dt(_mobile_record.get('created_at'))}（上传人：{_uploader}），"
+               f"风险等级：{_mobile_record.get('risk_label', '—')}")
     st.caption("App上的一句话结论：" + _mobile_record.get("one_line", "—"))
 
     # 手机批次：报告已在拍摄时核验完成，这里只读展示——现场纠正应回单证来源处

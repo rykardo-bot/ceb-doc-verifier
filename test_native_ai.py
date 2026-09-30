@@ -96,7 +96,8 @@ def test_no_key_mode_returns_notice(monkeypatch):
     monkeypatch.setattr(chat_assistant, "resolve_endpoint", lambda: None)
     r = answer_question("为什么风险100分？", verification_of(), BATCH["documents"])
     assert r["mode"] == "no_key"
-    assert "API Key" in r["answer"]
+    assert "管理员开通AI服务" in r["answer"]   # 业务口径话术（不再出现"环境变量"字样）
+    assert "环境变量" not in r["answer"]
 
 
 def test_hypothetical_question_triggers_real_recompute(monkeypatch):

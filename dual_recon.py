@@ -606,8 +606,17 @@ def apply_preview(decisions: list[dict], by: str) -> dict:
             if settle_fields:
                 train_store.upsert_settlement(trip_no, settle_fields, by)
 
-            # 己方预付款（付款日期可能是 2025.7.1 等写法，统一解析）
-            if own and own.get("prepay"):
+            # 己方预付款（付款日期可能是 2025.7.1 等写法，统一解析）。
+            # 金额为 0/空/无法解析时不落库：0 元预付款记录是纯噪音，
+            # 还会让台账的"预付核对"横幅误算需补款金额（修复验收发现）。
+            prepay_amt = 0.0
+            if own and own.get("prepay") is not None:
+                try:
+                    prepay_amt = float(str(own["prepay"]).replace(",", "").strip()
+                                       or 0)
+                except ValueError:
+                    prepay_amt = 0.0
+            if own and prepay_amt > 0:
                 from datacheck_import import parse_dep_cell
                 pay_date, _ = parse_dep_cell(own.get("pay_date"))
                 train_store.add_prepayment(trip_no,

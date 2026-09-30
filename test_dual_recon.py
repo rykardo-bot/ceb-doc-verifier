@@ -290,3 +290,28 @@ def test_lintu_trips_marked_not_duplicates():
     assert result["stats"][dual_recon.CONFIRMED] == 2
     types = sorted(p["own"]["train_type"] for p in result["pairs"])
     assert types == ["L", "T"]      # 临/图各自保留，可区分展示
+
+
+def test_apply_zero_prepay_not_persisted():
+    """己方预付为 0/空 → 不落 0 元预付款记录（纯噪音且干扰台账预付核对）。"""
+    own_slim = {"row_index": 2, "dep_date": "2025-07-19",
+                "station_name": "平旺", "port_name": "满洲里",
+                "dest_name": "谢利亚季诺", "station_code": "PW",
+                "port_code": "MZL", "dest_code": "XLY",
+                "dest_country": "俄罗斯", "route_raw": "平旺-满洲里-谢利亚季诺",
+                "pay_date": "2025.7.2", "prepay": "0",
+                "total": "2793440.46"}
+    agent_slim = {"row_index": 2, "dep_date": "2025-07-19",
+                  "station_name": "平旺", "port_name": "满洲里",
+                  "dest_name": "俄罗斯", "station_code": "PW",
+                  "port_code": "MZL", "dest_code": "RU",
+                  "goods_name": "汽车成套散件", "wagon_count": "50",
+                  "container_40hd": "25", "container_20hd": "0",
+                  "teu_total": "50", "total": "2793440.46",
+                  "actual_freight": "2793440.46"}
+    result = dual_recon.apply_preview([{
+        "match_key": "test|zeroprepay", "decision": "use_agent",
+        "own": own_slim, "agent": agent_slim}], by="t")
+    assert result["counts"]["created"] == 1
+    trip_no = result["results"][0]["trip_no"]
+    assert train_store.list_prepayments(trip_no) == []

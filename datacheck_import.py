@@ -316,7 +316,8 @@ def detect(kind: str, data: bytes) -> dict:
                 out.update(action="error", trip_no="",
                            message=f"第{rec['row_index']}行：{ {'station':'发站','port':'口岸','dest':'目的地'}[cat] }"
                                    f"“{rec.get(cat)}”未在代码字典登记，请先登记后再导入")
-                break
+                stats["error"] += 1     # 站名未登记同样计入错误数（此前漏计，
+                break                   # 汇总条显示"错误 0"误导财务以为全部可导入）
             codes[cat] = code
         else:
             base = train_number.build_base(rec["dep_date"], codes["station"],

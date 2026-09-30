@@ -142,33 +142,24 @@ def render_home() -> None:
 
     role = user.get("role", "")
     st.markdown('<div class="ceb-cards-anchor"></div>', unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        if role in ("business", "admin"):
-            st.page_link(
-                PAGE_DOC, icon="🔍", use_container_width=True,
-                label="**单据核对**\n\n上传单证照片或 PDF，AI 自动核对内容是否一致、"
-                      "齐全、路线合规，出具风险评分与整改材料")
-        else:
-            st.markdown(
-                '<div class="ceb-entry-card-disabled">'
-                '<span style="font-size:30px;">🔍</span>'
-                '<div class="t">单据核对</div>'
-                '<div class="d">（当前角色不可用：财务角色对单据核验数据的可见性'
-                '待业务侧确认）</div></div>', unsafe_allow_html=True)
-    with col2:
-        if role in ("finance", "admin"):
-            st.page_link(
-                PAGE_DATA, icon="📊", use_container_width=True,
-                label="**数据核对**\n\n查班列编号、登记班列、维护结算台账、"
-                      "三方对账、双表对账与 Excel 差异导入")
-        else:
-            st.markdown(
-                '<div class="ceb-entry-card-disabled">'
-                '<span style="font-size:30px;">📊</span>'
-                '<div class="t">数据核对</div>'
-                '<div class="d">（当前角色不可用：数据核对面向财务/管理员角色）</div>'
-                '</div>', unsafe_allow_html=True)
+    # 只渲染当前角色可用的模块入口：不可用模块直接不展示，
+    # 避免业务员首页出现永远点不动的"死卡片"（验收建议收敛项）
+    entries = []
+    if role in ("business", "admin"):
+        entries.append((
+            PAGE_DOC, "🔍", "**单据核对**",
+            "上传单证照片或 PDF，AI 自动核对内容是否一致、齐全、路线合规，"
+            "出具风险评分与整改材料"))
+    if role in ("finance", "admin"):
+        entries.append((
+            PAGE_DATA, "📊", "**数据核对**",
+            "查班列编号、登记班列、维护结算台账、三方对账、双表对账与 "
+            "Excel 差异导入"))
+    cols = st.columns(len(entries) or 1)
+    for col, (page, icon, title, desc) in zip(cols, entries):
+        with col:
+            st.page_link(page, icon=icon, use_container_width=True,
+                         label=f"{title}\n\n{desc}")
 
     if role == "admin":
         st.divider()
@@ -188,6 +179,11 @@ def render_home() -> None:
 
 
 # ---------------------------------------------------------------- 组装导航
+
+# 刷新恢复（P0）：logout 后先清 cookie（本轮完整渲染里执行），否则尝试用
+# cookie 里的令牌恢复登录——浏览器刷新/重开不再丢会话。
+if not session.process_cookie_clear():
+    session.restore_from_cookie()
 
 if not session.is_logged_in():
     # 登录前只注册登录页（P2-9）：导航若沿用上一次运行的页面清单，
@@ -228,4 +224,5 @@ with st.sidebar:
         st.rerun()
 
 nav = st.navigation(pages)
+session.sync_token_cookie()   # 登录态下保证浏览器 cookie 与当前令牌一致（刷新恢复用）
 nav.run()

@@ -60,8 +60,29 @@ def render() -> None:
         _render_report(st.session_state[_REPORT_KEY])
 
 
+def _template_xlsx() -> bytes:
+    """生成现场装车清单模板（含示例行，表头口径与解析器一致）。"""
+    import io
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "电子版"
+    ws.append(["序号", "车种", "车底号", "箱号", "铅封号"])
+    ws.append([1, "X70", "5480001", "TCLU1234567", "260001"])
+    ws.append([2, "X70", "5480002", "TCLU7654321", "260002"])
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
 def _upload_section():
     """两步上传：清单Excel（基准）+ 批量PDF运单（待核对）。"""
+    st.download_button(
+        "⬇️ 下载现场装车清单模板（含示例行，按模板列名填写）",
+        data=_template_xlsx(),
+        file_name="现场装车清单模板.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     col_xlsx, col_pdf = st.columns(2)
     with col_xlsx:
         xlsx_file = st.file_uploader(

@@ -649,7 +649,7 @@ def _tab_query() -> None:
 def _tab_ledger() -> None:
     today = date.today()
     dr = st.date_input("发运日期范围",
-                       value=(today - timedelta(days=365), today),
+                       value=(today - timedelta(days=365), today + timedelta(days=92)),
                        min_value=date(2020, 1, 1),
                        max_value=today + timedelta(days=366),
                        key="ledger_range")
@@ -986,7 +986,8 @@ def _tab_recon() -> None:
                 "差异超过阈值（默认 5% 或 5000 元，任一触发，管理员可在配置中调整）"
                 "标注“需人工关注”。重复值检测只提示不下结论。")
     today = date.today()
-    dr = st.date_input("发运日期范围", value=(today - timedelta(days=365), today),
+    dr = st.date_input("发运日期范围",
+                       value=(today - timedelta(days=365), today + timedelta(days=92)),
                        key="recon_range")
     date_from, date_to = (dr if isinstance(dr, tuple) and len(dr) == 2
                           else (today - timedelta(days=365), today))
